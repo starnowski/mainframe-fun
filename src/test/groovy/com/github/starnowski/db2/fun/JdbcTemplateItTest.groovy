@@ -27,7 +27,7 @@ class JdbcTemplateItTest extends Specification {
     def "should save item to db2 table with name #name"() {
         given:
             final String itemName = name
-            def insertStatement = "INSERT INTO DB2_FUN.ITEMS (name) VALUES (?)"
+            def insertStatement = "INSERT INTO DB2_FUN.ITEMS (ITEM_NAME) VALUES (?)"
 
         when:
             jdbcTemplate.execute(insertStatement, new PreparedStatementCallback<Void>() {
