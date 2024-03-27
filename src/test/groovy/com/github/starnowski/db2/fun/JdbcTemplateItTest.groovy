@@ -41,7 +41,9 @@ class JdbcTemplateItTest extends Specification {
 
         then:
             JdbcTestUtils.countRowsInTable(jdbcTemplate, "DB2_FUN.ITEMS") == 1
-            JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, "DB2_FUN.ITEMS", " ITEM_NAME == " + name) == 1
+            JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, "DB2_FUN.ITEMS", "ITEM_NAME = '" + name + "'") == 1
+            // Same assertion but with usage of groovy string templates
+            JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, "DB2_FUN.ITEMS", "ITEM_NAME = '${name}'") == 1
 
         where:
             name << ["test1", "simon tools"]
