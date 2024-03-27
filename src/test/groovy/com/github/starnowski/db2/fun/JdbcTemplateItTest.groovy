@@ -48,4 +48,35 @@ class JdbcTemplateItTest extends Specification {
         where:
             name << ["test1", "simon tools"]
     }
+
+    @Sql(value = "clear_tables.sql",
+            executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    @Sql(value = "clear_tables.sql",
+            executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
+    def "should save item with number to db2 table with name #name and number"() {
+        given:
+            final String itemName = name
+            final int itemNumber = number
+            def insertStatement = "INSERT INTO DB2_FUN.ITEMS_WITH_NUMBER (ITEM_NAME, NUM) VALUES (?, ?)"
+
+        when:
+            jdbcTemplate.execute(insertStatement, new PreparedStatementCallback<Void>() {
+                @Override
+                Void doInPreparedStatement(PreparedStatement ps) throws SQLException, DataAccessException {
+                    ps.setString(1, itemName)
+                    ps.setInt(2, itemNumber)
+                    ps.execute()
+                    return null
+                }
+            })
+
+        then:
+            JdbcTestUtils.countRowsInTable(jdbcTemplate, "DB2_FUN.ITEMS_WITH_NUMBER") == 1
+            // Same assertion but with usage of groovy string templates
+            JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, "DB2_FUN.ITEMS_WITH_NUMBER", "ITEM_NAME = '${name}' AND NUM = ${itemNumber}") == 1
+
+        where:
+            name | number
+            "xxx"   | 13
+    }
 }
