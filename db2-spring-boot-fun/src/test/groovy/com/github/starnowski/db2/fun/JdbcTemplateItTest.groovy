@@ -188,6 +188,7 @@ class JdbcTemplateItTest extends Specification {
 
         when:
             def result = tested.execute(testedParameterSource)
+            System.out.println("result is " + result)
 
         then:
             with(result) {
