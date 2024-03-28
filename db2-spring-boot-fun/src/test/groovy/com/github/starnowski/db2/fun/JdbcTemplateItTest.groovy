@@ -1,6 +1,7 @@
 package com.github.starnowski.db2.fun
 
 import jakarta.xml.bind.DatatypeConverter
+import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.dao.DataAccessException
@@ -173,6 +174,10 @@ class JdbcTemplateItTest extends Specification {
     }
 
     static calculateMD5ChecksumForByteArrayWithSecondStrategy(byte[] array) {
+        DigestUtils.md5Hex(array)
+    }
+
+    static calculateMD5ChecksumForByteArrayWithThirdStrategy(byte[] array) {
         byte[] hash = MessageDigest.getInstance("MD5").digest(array)
         new BigInteger(1, hash).toString(16).toUpperCase()
     }
