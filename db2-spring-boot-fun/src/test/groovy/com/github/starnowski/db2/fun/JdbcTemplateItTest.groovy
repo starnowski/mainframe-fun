@@ -192,7 +192,8 @@ class JdbcTemplateItTest extends Specification {
 
         then:
             result.get("#result-set-1")
-            with((Map<String, Object>) result.get("#result-set-1")) {
+            Map<String, Object> resultSet = (Map<String, Object>) result.get("#result-set-1")
+            with(resultSet) {
                 get("R_FILE_NAME") == file
                 get("R_FILE_CONTENT") == content
                 get("R_FILE_CHECKSUM") == checksumGenerateByFirstStrategy
