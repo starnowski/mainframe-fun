@@ -1,15 +1,11 @@
 package com.github.starnowski.db2.fun
 
-import jakarta.xml.bind.DatatypeConverter
-import org.apache.commons.codec.digest.DigestUtils
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.dao.DataAccessException
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.PreparedStatementCallback
 import org.springframework.jdbc.core.RowMapper
-import org.springframework.jdbc.core.SqlParameter
-import org.springframework.jdbc.core.SqlReturnResultSet
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource
 import org.springframework.jdbc.core.namedparam.SqlParameterSource
 import org.springframework.jdbc.core.simple.SimpleJdbcCall
@@ -19,7 +15,6 @@ import org.springframework.test.context.jdbc.SqlConfig
 import org.springframework.test.jdbc.JdbcTestUtils
 import spock.lang.Specification
 
-import java.security.MessageDigest
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.sql.SQLException
@@ -202,12 +197,11 @@ class JdbcTemplateItTest extends Specification {
             System.out.println("result is " + result)
 
         then:
-            result.get("#result-set-1")
-            Map<String, Object> resultSet = (Map<String, Object>) result.get("#result-set-1")
-            with(resultSet) {
-                get("R_FILE_NAME") == file
-                get("R_FILE_CONTENT") == content
-                get("R_FILE_CHECKSUM") == checksumGenerateByFirstStrategy
+            result.get("mapObjRefrence")
+            with((BinaryFileWithChecksum)result.get("mapObjRefrence")) {
+                getName() == file
+                getContent() == content
+                getChecksum() == checksumGenerateByFirstStrategy
             }
 
         where:
