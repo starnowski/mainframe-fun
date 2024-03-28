@@ -198,7 +198,9 @@ class JdbcTemplateItTest extends Specification {
 
         then:
             result.get("mapObjRefrence")
-            with((BinaryFileWithChecksum)result.get("mapObjRefrence")) {
+            List<BinaryFileWithChecksum> objects = result.get("mapObjRefrence")
+            !objects.isEmpty()
+            with(objects.get(0)) {
                 getName() == file
                 getContent() == content
                 getChecksum() == checksumGenerateByFirstStrategy
