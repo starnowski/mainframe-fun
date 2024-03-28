@@ -174,7 +174,7 @@ class JdbcTemplateItTest extends Specification {
 
     static calculateMD5ChecksumForByteArrayWithSecondStrategy(byte[] array) {
         byte[] hash = MessageDigest.getInstance("MD5").digest(array)
-        new BigInteger(1, hash).toString(16)
+        new BigInteger(1, hash).toString(16).toUpperCase()
     }
 
 }
