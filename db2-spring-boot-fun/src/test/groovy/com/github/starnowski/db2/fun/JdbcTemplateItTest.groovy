@@ -1,5 +1,6 @@
 package com.github.starnowski.db2.fun
 
+import jakarta.xml.bind.DatatypeConverter
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.dao.DataAccessException
@@ -14,6 +15,7 @@ import org.springframework.test.context.jdbc.SqlConfig
 import org.springframework.test.jdbc.JdbcTestUtils
 import spock.lang.Specification
 
+import java.security.MessageDigest
 import java.sql.PreparedStatement
 import java.sql.SQLException
 
@@ -136,7 +138,43 @@ class JdbcTemplateItTest extends Specification {
             "item2"             | 463           |   -43
     }
 
+    @Sql(value = ["clear_tables.sql", "file_record_add_upsert_procedure.sql"],
+            config = @SqlConfig(separator = "@"),
+            executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    @Sql(value = ["clear_tables.sql", "file_record_drop_upsert_procedure.sql"],
+            config = @SqlConfig(separator = "@"),
+            executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
+    def "should save file #file and calculate correct md5 checksum"() {
+        given:
+            def content = getClass().getResourceAsStream(file).readAllBytes()
+            SimpleJdbcCall simpleJdbcCall = new SimpleJdbcCall(jdbcTemplate).withSchemaName("DB2_FUN").withProcedureName("BINARY_FILE_WITH_CHECKSUM_INSERT")
+            SqlParameterSource parameterSource = new MapSqlParameterSource().addValue("P_FILE_NAME", file).addValue("P_FILE_CONTENT", content)
+            JdbcTestUtils.countRowsInTable(jdbcTemplate, "DB2_FUN.BINARY_FILE_WITH_CHECKSUM") == 0
+            String checksumGenerateByFirstStrategy = calculateMD5ChecksumForByteArrayWithFirstStrategy(content)
+            String checksumGenerateBySecondStrategy = calculateMD5ChecksumForByteArrayWithSecondStrategy(content)
 
-    //items_with_number_add_upsert_procedure.sql
-    //items_with_number_drop_upsert_procedure.sql
+        when:
+            simpleJdbcCall.execute(parameterSource)
+
+        then:
+            JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, "DB2_FUN.BINARY_FILE_WITH_CHECKSUM", "FILE_RECORD_NAME = '${file}'") == 1
+            JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, "DB2_FUN.BINARY_FILE_WITH_CHECKSUM", "FILE_RECORD_NAME = '${file}' AND FILE_RECORD IS NOT NULL") == 1
+            JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, "DB2_FUN.BINARY_FILE_WITH_CHECKSUM", "FILE_RECORD_NAME = '${file}' AND FILE_RECORD_CHECKSUM = '${checksumGenerateByFirstStrategy}'") == 1
+            JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, "DB2_FUN.BINARY_FILE_WITH_CHECKSUM", "FILE_RECORD_NAME = '${file}' AND FILE_RECORD_CHECKSUM = '${checksumGenerateBySecondStrategy}'") == 1
+
+        where:
+            file << ["test1.txt", "test2.txt"]
+    }
+
+    static calculateMD5ChecksumForByteArrayWithFirstStrategy(byte[] array) {
+        MessageDigest mdInstance = MessageDigest.getInstance("MD5")
+        mdInstance.update(array)
+        DatatypeConverter.printHexBinary(mdInstance.digest()).toUpperCase()
+    }
+
+    static calculateMD5ChecksumForByteArrayWithSecondStrategy(byte[] array) {
+        byte[] hash = MessageDigest.getInstance("MD5").digest(array)
+        new BigInteger(1, hash).toString(16)
+    }
+
 }
