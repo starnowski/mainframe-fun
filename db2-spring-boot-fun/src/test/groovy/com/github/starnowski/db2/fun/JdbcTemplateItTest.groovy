@@ -54,10 +54,8 @@ class JdbcTemplateItTest extends Specification {
     }
 
     @Sql(value = "clear_tables.sql",
-            config = @SqlConfig(separator = "@"),
             executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
     @Sql(value = "clear_tables.sql",
-            config = @SqlConfig(separator = "@"),
             executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
     def "should save item with number to db2 table with name #name and number #number"() {
         given:
@@ -100,7 +98,7 @@ class JdbcTemplateItTest extends Specification {
             SqlParameterSource parameterSource = new MapSqlParameterSource().addValue("P_ITEM_NAME", name).addValue("P_NUM", number)
 
         when:
-            simpleJdbcCall.execute()
+            simpleJdbcCall.execute(parameterSource)
 
         then:
             JdbcTestUtils.countRowsInTable(jdbcTemplate, "DB2_FUN.ITEMS_WITH_NUMBER") == 1
@@ -111,6 +109,32 @@ class JdbcTemplateItTest extends Specification {
             name                | number
             "vvcc"              | 13
             "some item name"    | 463
+    }
+
+    @Sql(value = ["clear_tables.sql", "items_with_number_add_upsert_procedure.sql", "items_with_number.sql"],
+            config = @SqlConfig(separator = "@"),
+            executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    @Sql(value = ["clear_tables.sql", "items_with_number_drop_upsert_procedure.sql"],
+            config = @SqlConfig(separator = "@"),
+            executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
+    def "should update item with number to db2 table with name #name and number #number with procedure when current number is #currentNumber"() {
+        given:
+            SimpleJdbcCall simpleJdbcCall = new SimpleJdbcCall(jdbcTemplate).withSchemaName("DB2_FUN").withProcedureName("ITEMS_WITH_NUMBER_UPSERT")
+            SqlParameterSource parameterSource = new MapSqlParameterSource().addValue("P_ITEM_NAME", name).addValue("P_NUM", number)
+            JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, "DB2_FUN.ITEMS_WITH_NUMBER", "ITEM_NAME = '${name}' AND NUM = ${currentNumber}") == 1
+
+        when:
+            simpleJdbcCall.execute(parameterSource)
+
+        then:
+            JdbcTestUtils.countRowsInTable(jdbcTemplate, "DB2_FUN.ITEMS_WITH_NUMBER") == 1
+            JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, "DB2_FUN.ITEMS_WITH_NUMBER", "ITEM_NAME = '${name}' AND NUM = ${number}") == 1
+            JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, "DB2_FUN.ITEMS_WITH_NUMBER", "ITEM_NAME = '${name}' AND NUM = ${currentNumber}") == 0
+
+        where:
+            name                | currentNumber |   number
+            "item1"             | 13            |   3213
+            "item2"             | 463           |   -43
     }
 
 
