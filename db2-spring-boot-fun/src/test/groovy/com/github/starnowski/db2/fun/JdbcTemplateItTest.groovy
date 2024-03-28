@@ -10,6 +10,7 @@ import org.springframework.jdbc.core.namedparam.SqlParameterSource
 import org.springframework.jdbc.core.simple.SimpleJdbcCall
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.jdbc.Sql
+import org.springframework.test.context.jdbc.SqlConfig
 import org.springframework.test.jdbc.JdbcTestUtils
 import spock.lang.Specification
 
@@ -53,8 +54,10 @@ class JdbcTemplateItTest extends Specification {
     }
 
     @Sql(value = "clear_tables.sql",
+            config = @SqlConfig(separator = "@"),
             executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
     @Sql(value = "clear_tables.sql",
+            config = @SqlConfig(separator = "@"),
             executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
     def "should save item with number to db2 table with name #name and number #number"() {
         given:
@@ -84,8 +87,10 @@ class JdbcTemplateItTest extends Specification {
     }
 
     @Sql(value = ["clear_tables.sql", "items_with_number_add_upsert_procedure.sql"],
+            config = @SqlConfig(separator = "@"),
             executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
     @Sql(value = ["clear_tables.sql", "items_with_number_drop_upsert_procedure.sql"],
+            config = @SqlConfig(separator = "@"),
             executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
     def "should insert item with number to db2 table with name #name and number #number with procedure"() {
         given:
