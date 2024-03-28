@@ -13,7 +13,7 @@ BEGIN
     IF V_COUNT > 0 THEN
         -- Update the existing record
         UPDATE DB2_FUN.ITEMS_WITH_NUMBER
-        SET NUM = P_NUM,
+        SET NUM = P_NUM
         WHERE ITEM_NAME = P_ITEM_NAME;
     ELSE
         -- Insert a new record
