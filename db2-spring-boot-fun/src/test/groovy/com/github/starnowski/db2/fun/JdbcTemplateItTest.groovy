@@ -7,6 +7,9 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.dao.DataAccessException
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.PreparedStatementCallback
+import org.springframework.jdbc.core.RowMapper
+import org.springframework.jdbc.core.SqlParameter
+import org.springframework.jdbc.core.SqlReturnResultSet
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource
 import org.springframework.jdbc.core.namedparam.SqlParameterSource
 import org.springframework.jdbc.core.simple.SimpleJdbcCall
@@ -18,6 +21,7 @@ import spock.lang.Specification
 
 import java.security.MessageDigest
 import java.sql.PreparedStatement
+import java.sql.ResultSet
 import java.sql.SQLException
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = DB2Application)
@@ -183,6 +187,13 @@ class JdbcTemplateItTest extends Specification {
             simpleJdbcCall.execute(parameterSource)
             JdbcTestUtils.countRowsInTable(jdbcTemplate, "DB2_FUN.BINARY_FILE_WITH_CHECKSUM") == 1
             SimpleJdbcCall tested = new SimpleJdbcCall(jdbcTemplate).withSchemaName("DB2_FUN").withProcedureName("BINARY_FILE_WITH_CHECKSUM_READ")
+                    .returningResultSet("mapObjRefrence", new RowMapper<BinaryFileWithChecksum>() {
+
+                        @Override
+                        BinaryFileWithChecksum mapRow(ResultSet rs, int rowNum) throws SQLException {
+                            return new BinaryFileWithChecksum(rs.getString("R_FILE_NAME"), rs.getString("R_FILE_CHECKSUM"), rs.getBytes("R_FILE_CONTENT"))
+                        }
+                    });
             SqlParameterSource testedParameterSource = new MapSqlParameterSource().addValue("P_FILE_NAME", file)
 
 
@@ -201,6 +212,30 @@ class JdbcTemplateItTest extends Specification {
 
         where:
         file << ["test1.txt", "test2.txt"]
+    }
+
+    private static class BinaryFileWithChecksum {
+        private final String checksum;
+        private final byte[] content;
+        private final String name;
+
+        String getName() {
+            return name
+        }
+
+        String getChecksum() {
+            return checksum
+        }
+        byte[] getContent() {
+            return content
+        }
+
+        BinaryFileWithChecksum(String name, String checksum, byte[] content) {
+            this.name = name
+            this.checksum = checksum
+            this.content = content
+        }
+
     }
 
 }
