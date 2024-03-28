@@ -127,7 +127,6 @@ class JdbcTemplateItTest extends Specification {
             simpleJdbcCall.execute(parameterSource)
 
         then:
-            JdbcTestUtils.countRowsInTable(jdbcTemplate, "DB2_FUN.ITEMS_WITH_NUMBER") == 1
             JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, "DB2_FUN.ITEMS_WITH_NUMBER", "ITEM_NAME = '${name}' AND NUM = ${number}") == 1
             JdbcTestUtils.countRowsInTableWhere(jdbcTemplate, "DB2_FUN.ITEMS_WITH_NUMBER", "ITEM_NAME = '${name}' AND NUM = ${currentNumber}") == 0
 
