@@ -151,8 +151,8 @@ class JdbcTemplateItTest extends Specification {
             SimpleJdbcCall simpleJdbcCall = new SimpleJdbcCall(jdbcTemplate).withSchemaName("DB2_FUN").withProcedureName("BINARY_FILE_WITH_CHECKSUM_INSERT")
             SqlParameterSource parameterSource = new MapSqlParameterSource().addValue("P_FILE_NAME", file).addValue("P_FILE_CONTENT", content)
             JdbcTestUtils.countRowsInTable(jdbcTemplate, "DB2_FUN.BINARY_FILE_WITH_CHECKSUM") == 0
-            String checksumGenerateByFirstStrategy = calculateMD5ChecksumForByteArrayWithFirstStrategy(content)
-            String checksumGenerateBySecondStrategy = calculateMD5ChecksumForByteArrayWithSecondStrategy(content)
+            String checksumGenerateByFirstStrategy = ChecksumMD5Utils.calculateMD5ChecksumForByteArrayWithFirstStrategy(content)
+            String checksumGenerateBySecondStrategy = ChecksumMD5Utils.calculateMD5ChecksumForByteArrayWithSecondStrategy(content)
 
         when:
             simpleJdbcCall.execute(parameterSource)
@@ -165,21 +165,6 @@ class JdbcTemplateItTest extends Specification {
 
         where:
             file << ["test1.txt", "test2.txt"]
-    }
-
-    static calculateMD5ChecksumForByteArrayWithFirstStrategy(byte[] array) {
-        MessageDigest mdInstance = MessageDigest.getInstance("MD5")
-        mdInstance.update(array)
-        DatatypeConverter.printHexBinary(mdInstance.digest()).toUpperCase()
-    }
-
-    static calculateMD5ChecksumForByteArrayWithSecondStrategy(byte[] array) {
-        DigestUtils.md5Hex(array)
-    }
-
-    static calculateMD5ChecksumForByteArrayWithThirdStrategy(byte[] array) {
-        byte[] hash = MessageDigest.getInstance("MD5").digest(array)
-        new BigInteger(1, hash).toString(16).toUpperCase()
     }
 
 }
