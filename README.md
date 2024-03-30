@@ -2,6 +2,9 @@
 
 # mainframe-fun
 
+### IMB Docs about store procedures for DB2
+https://www.ibm.com/docs/en/i/7.5?topic=triggers-stored-procedures
+
 ### DB2 Tutorial
 
 #### Introduction to DB2 
