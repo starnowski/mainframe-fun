@@ -210,6 +210,36 @@ class JdbcTemplateItTest extends Specification {
         file << ["test1.txt", "test2.txt"]
     }
 
+    @Sql(value = ["clear_tables.sql", "file_record_add_upsert_procedure.sql", "file_record_add_get_checksum_procedure.sql"],
+            config = @SqlConfig(separator = "@"),
+            executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD)
+    @Sql(value = ["clear_tables.sql", "file_record_drop_upsert_procedure.sql", "file_record_drop_get_checksum_procedure.sql"],
+            config = @SqlConfig(separator = "@"),
+            executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD)
+    def "should read file #file md5 checksum by stored procedure with output parameter"() {
+        given:
+            def content = getClass().getResourceAsStream(file).readAllBytes()
+            SimpleJdbcCall simpleJdbcCall = new SimpleJdbcCall(jdbcTemplate).withSchemaName("DB2_FUN").withProcedureName("BINARY_FILE_WITH_CHECKSUM_INSERT")
+            SqlParameterSource parameterSource = new MapSqlParameterSource().addValue("P_FILE_NAME", file).addValue("P_FILE_CONTENT", content)
+            JdbcTestUtils.countRowsInTable(jdbcTemplate, "DB2_FUN.BINARY_FILE_WITH_CHECKSUM") == 0
+            String checksumGenerateByFirstStrategy = ChecksumMD5Utils.calculateMD5ChecksumForByteArrayWithFirstStrategy(content)
+            simpleJdbcCall.execute(parameterSource)
+            JdbcTestUtils.countRowsInTable(jdbcTemplate, "DB2_FUN.BINARY_FILE_WITH_CHECKSUM") == 1
+            SimpleJdbcCall tested = new SimpleJdbcCall(jdbcTemplate).withSchemaName("DB2_FUN").withProcedureName("BINARY_FILE_CHECKSUM_READ")
+            SqlParameterSource testedParameterSource = new MapSqlParameterSource().addValue("P_FILE_NAME", file)
+
+
+        when:
+            def result = tested.executeObject(String, testedParameterSource)
+            System.out.println("result is '" + result + "'")
+
+        then:
+            result == checksumGenerateByFirstStrategy
+
+        where:
+            file << ["test1.txt", "test2.txt"]
+    }
+
     private static class BinaryFileWithChecksum {
         private final String checksum;
         private final byte[] content;
